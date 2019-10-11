@@ -1,0 +1,51 @@
+CREATE TABLE Production(Title VARCHAR(25), BasicTicketPrice FLOAT NOT NULL, PRIMARY KEY(Title));
+
+CREATE TABLE Performance(PerfDate DATE, PerfTime TIME, Title VARCHAR(25), PRIMARY KEY(PerfDate, PerfTime), FOREIGN KEY (Title) REFERENCES Production(Title));
+
+CREATE TABLE Booking(Email VARCHAR(100), PerfDate DATE, PerfTime TIME, RowNumber CHAR(3), PRIMARY KEY(Email, PerfDate, PerfTime, RowNumber), FOREIGN KEY (RowNumber) REFERENCES Seat(RowNumber));
+
+
+INSERT INTO Production VALUES('Cats', '15.00');
+INSERT INTO Production VALUES('Fame', '15.00');
+INSERT INTO Production VALUES('Tosca', '30.00');
+
+INSERT INTO Performance VALUES('2017-11-01', '19:00:00', 'Cats');
+INSERT INTO Performance VALUES('2017-11-02', '19:00:00', 'Cats');
+INSERT INTO Performance VALUES('2017-11-03', '19:00:00', 'Cats');
+INSERT INTO Performance VALUES('2017-11-03', '13:00:00', 'Cats');
+INSERT INTO Performance VALUES('2017-11-04', '19:00:00', 'Fame');
+INSERT INTO Performance VALUES('2017-11-05', '13:00:00', 'Fame');
+INSERT INTO Performance VALUES('2017-11-05', '19:00:00', 'Tosca');
+INSERT INTO Performance VALUES('2017-11-06', '13:00:00', 'Tosca');
+INSERT INTO Performance VALUES('2017-11-06', '19:00:00', 'Tosca');
+
+INSERT INTO Booking VALUES('ZP@email.com', '2017-11-01', '19:00:00', 'Z18');
+INSERT INTO Booking VALUES('ZP@email.com', '2017-11-01', '19:00:00', 'Z19');
+INSERT INTO Booking VALUES('Jane.Dot@live.com', '2017-11-01', '19:00:00', 'Z16');
+INSERT INTO Booking VALUES('Jane.Dot@live.com', '2017-11-05', '13:00:00', 'U20');
+INSERT INTO Booking VALUES('Jane.Dot@live.com', '2017-11-05', '13:00:00', 'U19');
+INSERT INTO Booking VALUES('Mike.Stand@email.com', '2017-11-05', '13:00:00', 'X13');
+INSERT INTO Booking VALUES('Mike.Stand@email.com', '2017-11-05', '13:00:00', 'X14');
+INSERT INTO Booking VALUES('qvf3@live.com', '2017-11-05', '13:00:00', 'Z19');
+
+
+
+SELECT * FROM Performance WHERE Title = 'Cats' ORDER BY PerfDate, PerfTime ASC;
+
+SELECT Email, Performance.PerfDate, Performance.PerfTime, Title FROM Booking INNER JOIN Performance ON Booking.PerfDate = Performance.PerfDate AND Booking.PerfTime = Performance.PerfTime WHERE Email LIKE '%@email.com';
+
+SELECT rp.RowNumber AS RowNumber, rp.Email AS Email, TRUNCATE(zr.PriceMultiplier * rp.BasicTicketPrice, 2) AS RowPrice FROM
+(SELECT RowNumber, PriceMultiplier FROM Zone INNER JOIN Seat ON Zone.Name = Seat.Zone) AS zr
+INNER JOIN
+(SELECT RowNumber, BasicTicketPrice, booked.Email FROM 
+	Production
+	INNER JOIN
+	(SELECT Booking.Email AS Email, Booking.RowNumber, Title FROM Booking INNER JOIN Performance ON Booking.PerfDate = Performance.PerfDate AND Booking.PerfTime = Performance.PerfTime) AS booked
+	ON
+	Production.Title = booked.Title) AS rp
+ON
+rp.RowNumber = zr.RowNumber;
+
+SELECT RowNumber From Seat WHERE RowNumber NOT IN (SELECT RowNumber FROM Booking WHERE PerfDate = '2017-11-01' AND PerfTime = '19:00:00');
+
+SELECT Zone.Name, Zone.PriceMultiplier, COUNT(*) AS Count FROM Zone INNER JOIN Seat ON Zone.Name = Seat.Zone WHERE Zone.PriceMultiplier > 2.3 GROUP BY Zone.Name;
